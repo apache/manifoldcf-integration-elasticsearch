@@ -18,10 +18,12 @@
 */
 package org.apache.manifoldcf.elasticsearch;
 
+import java.io.*;
 import java.util.*;
 import java.net.*;
 
 import org.apache.lucene.search.*;
+import org.apache.lucene.index.*;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.HttpStatus;
@@ -37,7 +39,9 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
-import org.slf4j.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** This class represents the main Java API for modifying Lucene queries
 * within ElasticSearch.  It is a singleton class whose main public method
@@ -69,7 +73,7 @@ public class QueryModifier
   /** Constructor, which includes configuration information */
   public QueryModifier(ConfigurationParameters cp)
   {
-    authorityBaseURL = cp.authorityBaseURL;
+    authorityBaseURL = cp.authorityServiceBaseURL;
     fieldAllowDocument = cp.allowFieldPrefix+"document";
     fieldDenyDocument = cp.denyFieldPrefix+"document";
     fieldAllowShare = cp.allowFieldPrefix+"share";
@@ -81,7 +85,7 @@ public class QueryModifier
     // Set up client pool etc, if there's indication that we should do that
     if (authorityBaseURL != null)
     {
-      PoolingClientConnectionManager localConnectionManager = new PoolingClientConnManager();
+      PoolingClientConnectionManager localConnectionManager = new PoolingClientConnectionManager();
       localConnectionManager.setMaxTotal(poolSize);
       localConnectionManager.setDefaultMaxPerRoute(poolSize);
       connectionManager = localConnectionManager;
@@ -90,10 +94,15 @@ public class QueryModifier
       params.setBooleanParameter(CoreConnectionPNames.TCP_NODELAY,true);
       params.setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK,false);
       params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT,socketTimeout);
-      params.setIntParameter(CoreConnectionPNames.CONNECT_TIMEOUT,connectionTimeout);
+      params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT,connectionTimeout);
       DefaultHttpClient localClient = new DefaultHttpClient(connectionManager,params);
       localClient.setRedirectStrategy(new DefaultRedirectStrategy());
       httpClient = localClient;
+    }
+    else
+    {
+      connectionManager = null;
+      httpClient = null;
     }
   }
   
@@ -191,7 +200,7 @@ public class QueryModifier
 
   /** Get access tokens given a username */
   protected List<String> getAccessTokens(String authenticatedUserName)
-    throws QueryModificationException
+    throws QueryModifierException
   {
     try
     {
@@ -203,8 +212,8 @@ public class QueryModifier
         int rval = httpResponse.getStatusLine().getStatusCode();
         if (rval != 200)
         {
-          String response = EntityUtils.toString(httpResponse.getEntity(),null);
-          throw new QueryModificationException("Couldn't fetch user's access tokens from ManifoldCF authority service: "+Integer.toString(rval)+"; "+response);
+          String response = EntityUtils.toString(httpResponse.getEntity(),"utf-8");
+          throw new QueryModifierException("Couldn't fetch user's access tokens from ManifoldCF authority service: "+Integer.toString(rval)+"; "+response);
         }
         InputStream is = httpResponse.getEntity().getContent();
         try
@@ -259,7 +268,7 @@ public class QueryModifier
     }
     catch (IOException e)
     {
-      throw new QueryModificationException("IO exception: "+e.getMessage(),e);
+      throw new QueryModifierException("IO exception: "+e.getMessage(),e);
     }
   }
 
