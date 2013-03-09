@@ -18,19 +18,19 @@
 */
 package org.apache.manifoldcf.elasticsearch;
 
-/** This class represents the main Java API for modifying Lucene queries
-* within ElasticSearch.  It is a singleton class whose main public method
+/** This class represents exceptions for authorizing ElasticSearch requests
+* to include security.  It is a singleton class whose main public method
 * is thread-safe.
 */
-public class QueryModifierException extends Exception
+public class AuthorizerException extends Exception
 {
   /** Constructor */
-  public QueryModifierException(String message)
+  public AuthorizerException(String message)
   {
     super(message);
   }
   
-  public QueryModifierException(String message, Throwable cause)
+  public AuthorizerException(String message, Throwable cause)
   {
     super(message,cause);
   }

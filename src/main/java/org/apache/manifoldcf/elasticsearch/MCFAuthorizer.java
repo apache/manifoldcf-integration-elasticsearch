@@ -22,8 +22,9 @@ import java.io.*;
 import java.util.*;
 import java.net.*;
 
-import org.apache.lucene.search.*;
-import org.apache.lucene.index.*;
+import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.BoolFilterBuilder;
+import org.elasticsearch.index.query.TermFilterBuilder;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.HttpStatus;
@@ -43,18 +44,18 @@ import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** This class represents the main Java API for modifying Lucene queries
-* within ElasticSearch.  It is a singleton class whose main public method
+/** This class represents the main Java API for modifying SearchRequestBuilder 
+* objects within ElasticSearch.  It is a singleton class whose main public method
 * is thread-safe.
 */
-public class QueryModifier
+public class MCFAuthorizer
 {
   
   /** Special token for null security fields */
   static final public String NOSECURITY_TOKEN = "__nosecurity__";
 
   /** A logger we can use */
-  private static final Logger LOG = LoggerFactory.getLogger(QueryModifier.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MCFAuthorizer.class);
 
   // Member variables
 
@@ -71,7 +72,7 @@ public class QueryModifier
   protected final HttpClient httpClient;
 
   /** Constructor, which includes configuration information */
-  public QueryModifier(ConfigurationParameters cp)
+  public MCFAuthorizer(ConfigurationParameters cp)
   {
     authorityBaseURL = cp.authorityServiceBaseURL;
     fieldAllowDocument = cp.allowFieldPrefix+"document";
@@ -114,13 +115,12 @@ public class QueryModifier
       connectionManager.shutdown();
   }
   
-  /** Main method for wrapping a query with appropriate security.
-  *@param userQuery is the user query to wrap.
+  /** Main method for building a filter representing appropriate security.
   *@param authenticatedUserName is a user name in the form "user@domain".
-  *@return the wrapped query enforcing ManifoldCF security.
+  *@return the filter builder.
   */
-  public Query wrapQuery(Query userQuery, String authenticatedUserName)
-    throws QueryModifierException
+  public FilterBuilder buildAuthorizationFilter(String authenticatedUserName)
+    throws AuthorizerException
   {
     if (authorityBaseURL == null)
       throw new IllegalStateException("Authority base URL required for finding access tokens for a user");
@@ -130,23 +130,22 @@ public class QueryModifier
 
     LOG.info("Trying to match docs for user '"+authenticatedUserName+"'");
 
-    return wrapQuery(userQuery,getAccessTokens(authenticatedUserName));
+    return buildAuthorizationFilter(getAccessTokens(authenticatedUserName));
   }
 
-  /** Main method for wrapping a query with appropriate security.
-  *@param userQuery is the user query to wrap.
-  *@param userAccessTokens are a set of tokens to use to wrap the query (presumably from mod_authz_annotate, upstream)
+  /** Main method for building a filter representing appropriate security.
+  *@param userAccessTokens are a set of tokens to use to construct the filter (presumably from mod_authz_annotate, upstream)
   *@return the wrapped query enforcing ManifoldCF security.
   */
-  public Query wrapQuery(Query userQuery, List<String> userAccessTokens)
-    throws QueryModifierException
+  public FilterBuilder buildAuthorizationFilter(List<String> userAccessTokens)
+    throws AuthorizerException
   {
-    BooleanQuery bq = new BooleanQuery();
+    BoolFilterBuilder bq = new BoolFilterBuilder();
     
-    Query allowShareOpen = new TermQuery(new Term(fieldAllowShare,NOSECURITY_TOKEN));
-    Query denyShareOpen = new TermQuery(new Term(fieldDenyShare,NOSECURITY_TOKEN));
-    Query allowDocumentOpen = new TermQuery(new Term(fieldAllowDocument,NOSECURITY_TOKEN));
-    Query denyDocumentOpen = new TermQuery(new Term(fieldDenyDocument,NOSECURITY_TOKEN));
+    FilterBuilder allowShareOpen = new TermFilterBuilder(fieldAllowShare,NOSECURITY_TOKEN);
+    FilterBuilder denyShareOpen = new TermFilterBuilder(fieldDenyShare,NOSECURITY_TOKEN);
+    FilterBuilder allowDocumentOpen = new TermFilterBuilder(fieldAllowDocument,NOSECURITY_TOKEN);
+    FilterBuilder denyDocumentOpen = new TermFilterBuilder(fieldDenyDocument,NOSECURITY_TOKEN);
     
     if (userAccessTokens == null || userAccessTokens.size() == 0)
     {
@@ -155,52 +154,47 @@ public class QueryModifier
       // (fieldAllowShare is empty AND fieldDenyShare is empty AND fieldAllowDocument is empty AND fieldDenyDocument is empty)
       // We're trying to map to:  -(fieldAllowShare:*) , which should be pretty efficient in Solr because it is negated.  If this turns out not to be so, then we should
       // have the SolrConnector inject a special token into these fields when they otherwise would be empty, and we can trivially match on that token.
-      bq.add(allowShareOpen,BooleanClause.Occur.MUST);
-      bq.add(denyShareOpen,BooleanClause.Occur.MUST);
-      bq.add(allowDocumentOpen,BooleanClause.Occur.MUST);
-      bq.add(denyDocumentOpen,BooleanClause.Occur.MUST);
+      bq.must(allowShareOpen);
+      bq.must(denyShareOpen);
+      bq.must(allowDocumentOpen);
+      bq.must(denyDocumentOpen);
     }
     else
     {
       // Extend the query appropriately for each user access token.
-      bq.add(calculateCompleteSubquery(fieldAllowShare,fieldDenyShare,allowShareOpen,denyShareOpen,userAccessTokens),
-        BooleanClause.Occur.MUST);
-      bq.add(calculateCompleteSubquery(fieldAllowDocument,fieldDenyDocument,allowDocumentOpen,denyDocumentOpen,userAccessTokens),
-        BooleanClause.Occur.MUST);
+      bq.must(calculateCompleteSubquery(fieldAllowShare,fieldDenyShare,allowShareOpen,denyShareOpen,userAccessTokens));
+      bq.must(calculateCompleteSubquery(fieldAllowDocument,fieldDenyDocument,allowDocumentOpen,denyDocumentOpen,userAccessTokens));
     }
 
-    // Concatenate with the user's original query.
-    BooleanQuery rval = new BooleanQuery();
-    rval.add(new ConstantScoreQuery(bq),BooleanClause.Occur.MUST);
-    rval.add(userQuery,BooleanClause.Occur.MUST);
-    return rval;
+    return bq;
   }
 
   /** Calculate a complete subclause, representing something like:
   * ((fieldAllowShare is empty AND fieldDenyShare is empty) OR fieldAllowShare HAS token1 OR fieldAllowShare HAS token2 ...)
   *     AND fieldDenyShare DOESN'T_HAVE token1 AND fieldDenyShare DOESN'T_HAVE token2 ...
   */
-  protected static Query calculateCompleteSubquery(String allowField, String denyField, Query allowOpen, Query denyOpen, List<String> userAccessTokens)
+  protected static FilterBuilder calculateCompleteSubquery(String allowField, String denyField, FilterBuilder allowOpen, FilterBuilder denyOpen, List<String> userAccessTokens)
   {
-    BooleanQuery bq = new BooleanQuery();
-    bq.setMaxClauseCount(1000000);
+    BoolFilterBuilder bq = new BoolFilterBuilder();
+    // No ES equivalent - hope this is done right inside
+    //bq.setMaxClauseCount(1000000);
     
     // Add the empty-acl case
-    BooleanQuery subUnprotectedClause = new BooleanQuery();
-    subUnprotectedClause.add(allowOpen,BooleanClause.Occur.MUST);
-    subUnprotectedClause.add(denyOpen,BooleanClause.Occur.MUST);
-    bq.add(subUnprotectedClause,BooleanClause.Occur.SHOULD);
+    BoolFilterBuilder subUnprotectedClause = new BoolFilterBuilder();
+    subUnprotectedClause.must(allowOpen);
+    subUnprotectedClause.must(denyOpen);
+    bq.should(subUnprotectedClause);
     for (String accessToken : userAccessTokens)
     {
-      bq.add(new TermQuery(new Term(allowField,accessToken)),BooleanClause.Occur.SHOULD);
-      bq.add(new TermQuery(new Term(denyField,accessToken)),BooleanClause.Occur.MUST_NOT);
+      bq.should(new TermFilterBuilder(allowField,accessToken));
+      bq.mustNot(new TermFilterBuilder(denyField,accessToken));
     }
     return bq;
   }
 
   /** Get access tokens given a username */
   protected List<String> getAccessTokens(String authenticatedUserName)
-    throws QueryModifierException
+    throws AuthorizerException
   {
     try
     {
@@ -213,7 +207,7 @@ public class QueryModifier
         if (rval != 200)
         {
           String response = EntityUtils.toString(httpResponse.getEntity(),"utf-8");
-          throw new QueryModifierException("Couldn't fetch user's access tokens from ManifoldCF authority service: "+Integer.toString(rval)+"; "+response);
+          throw new AuthorizerException("Couldn't fetch user's access tokens from ManifoldCF authority service: "+Integer.toString(rval)+"; "+response);
         }
         InputStream is = httpResponse.getEntity().getContent();
         try
@@ -268,7 +262,7 @@ public class QueryModifier
     }
     catch (IOException e)
     {
-      throw new QueryModifierException("IO exception: "+e.getMessage(),e);
+      throw new AuthorizerException("IO exception: "+e.getMessage(),e);
     }
   }
 
