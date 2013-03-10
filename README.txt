@@ -15,24 +15,42 @@
 
 
 Instructions for Building Apache ManifoldCF ElasticSearch Plugin from Source
--------------------------------------------------------------------
+-------------------------------------------------------------------------
 
 1. Download the Java SE 6 JDK (Java Development Kit), or greater, from http://www.oracle.com/technetwork/java/index.html.
    You will need the JDK installed, and the %JAVA_HOME%\bin directory included
    on your command path.  To test this, issue a "java -version" command from your
    shell and verify that the Java version is 1.6 or greater.
 
-2. Download the Apache Ant binary distribution (1.8.2 or greater) from http://ant.apache.org.
-   You will need Ant installed and the %ANT_HOME%\bin directory included on your
-   command path.  To test this, issue a "ant -version" command from your
-   shell and verify that Ant is available.
+2. Download and install Maven 2.2.1 or later.  Maven installation and configuration instructions can be found here:
 
-3. In a shell, change to the root directory of the source (where you find the outermost
-   build.xml file), and type "ant" for directions.
+http://maven.apache.org/run-maven/index.html
 
+3. Build packages
 
-Some Files Included In Apache ManifoldCF ElasticSearch Plugin Distributions
------------------------------------------------------------------------
+Execute the following command in order to build the JAR packages and install 
+them to the local repository:
+
+mvn install
+
+The JAR packages can be found in the target folder:
+
+target/elasticsearch-plugin-mcf-<VERSION>.jar
+
+... where <VERSION> is the release version
+
+4. Building distribution assemblies 
+
+Execute the following command in order to build the distribution assemblies
+
+mvn package assembly:assembly
+
+5. Fix EOL in source files
+
+Fix the archive files so the source files have the correct EOL settings:
+
+mvn antrun:run
+
 
 Licensing
 ---------

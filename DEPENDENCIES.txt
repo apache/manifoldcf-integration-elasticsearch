@@ -1,8 +1,7 @@
 Apache ManifoldCF ElasticSearch Plugin requires
 ----------------------------------------------
 * JRE 1.6 or above
-* svn command line tools
-* ant 1.8 or higher
+* mvn 2.2 or higher
 
 For building Apache ManifoldCF ElasticSearch Plugin:
 -------------------------------------------------
