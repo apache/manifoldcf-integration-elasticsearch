@@ -14,8 +14,8 @@
 # limitations under the License.
 
 
-Instructions for Building Apache ManifoldCF ElasticSearch Plugin from Source
--------------------------------------------------------------------------
+Instructions for Building Apache ManifoldCF Plugin for Elastic Search from Source
+-----------------------------------------------------------------------------
 
 1. Download the Java SE 6 JDK (Java Development Kit), or greater, from http://www.oracle.com/technetwork/java/index.html.
    You will need the JDK installed, and the %JAVA_HOME%\bin directory included
@@ -55,7 +55,7 @@ mvn antrun:run
 Licensing
 ---------
 
-Apache ManifoldCF ElasticSearch Plugin is licensed under the
+Apache ManifoldCF Plugin for Elastic Search is licensed under the
 Apache License 2.0. See the files called LICENSE.txt and NOTICE.txt
 for more information.
 
@@ -84,7 +84,7 @@ code and source code.
 The following provides more details on the included software that
 may be subject to export controls on cryptographic software:
 
-  The Apache ManifoldCF ElasticSearch plugin does not include any
+  The Apache ManifoldCF Plugin for Elastic Search does not include any
   implementation or usage of cryptographic software at this time.
   
 Contact

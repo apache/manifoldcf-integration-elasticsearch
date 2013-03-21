@@ -1,4 +1,4 @@
-Apache ManifoldCF ElasticSearch Plugin change Log
+Apache ManifoldCF Plugin for Elastic Search change Log
 $Id$
 
 ======================= 0.1-dev =====================
