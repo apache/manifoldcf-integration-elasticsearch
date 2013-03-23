@@ -23,6 +23,8 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.node.Node;
 
 
@@ -41,6 +43,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 import static org.elasticsearch.client.Requests.*;
 import static org.elasticsearch.index.query.QueryBuilders.*;
@@ -73,18 +77,58 @@ public class MCFAuthorizerTest
   }
 
   @BeforeClass
-  public void startNodes() {
+  public void startNodes() throws IOException {
     startNode("server", nodeSettings());
     client = getClient();
+    createIndex();
   }
 
-  protected void createIndex() {
+  protected void createIndex()
+    throws IOException {
     try {
       client.admin().indices().prepareDelete("test").execute().actionGet();
     } catch (Exception e) {
       // ignore
     }
+    
+    // Question: We need the equivalent of default field values.  How do we set that in ElasticSearch?
+    // MHL
     client.admin().indices().create(createIndexRequest("test")).actionGet();
+    //             |     share    |   document
+    //             |--------------|--------------
+    //             | allow | deny | allow | deny
+    // ------------+-------+------+-------+------
+    // da12        |       |      | 1, 2  |
+    // ------------+-------+------+-------+------
+    // da13-dd3    |       |      | 1,3   | 3
+    // ------------+-------+------+-------+------
+    // sa123-sd13  | 1,2,3 | 1, 3 |       |
+    // ------------+-------+------+-------+------
+    // sa3-sd1-da23| 3     | 1    | 2,3   |
+    // ------------+-------+------+-------+------
+    // notoken     |       |      |       |
+    // ------------+-------+------+-------+------
+    //
+    addDoc("id", "da12",
+      "allow_token_document", "token1",
+      "allow_token_document", "token2");
+    addDoc("id", "da13-dd3",
+      "allow_token_document", "token1",
+      "allow_token_document", "token3",
+      "deny_token_document", "token3");
+    addDoc("id", "sa123-sd13",
+      "allow_token_share", "token1",
+      "allow_token_share", "token2",
+      "allow_token_share", "token3",
+      "deny_token_share", "token1",
+      "deny_token_share", "token3");
+    addDoc("id", "sa3-sd1-da23",
+      "allow_token_document", "token2",
+      "allow_token_document", "token3",
+      "allow_token_share", "token3",
+      "deny_token_share", "token1");
+    addDoc("id", "notoken");
+    commit();
   }
 
   protected Settings nodeSettings() {
@@ -95,6 +139,21 @@ public class MCFAuthorizerTest
     return "test";
   }
 
+  protected void addDoc(String id, String docID,
+    String... argPairs)
+    throws IOException
+  {
+    client.prepareIndex().setIndex("test")
+      .setType("type1").setId(id)
+      .setSource(source(id,argPairs))
+      .setRefresh(true).execute().actionGet();
+  }
+  
+  protected void commit()
+  {
+    client.admin().indices().prepareRefresh("test").execute().actionGet();
+  }
+  
   @AfterClass
   public void closeNodes() {
     client.close();
@@ -105,6 +164,37 @@ public class MCFAuthorizerTest
     return client("server");
   }
   
+  private static XContentBuilder source(String id, String... argPairs) throws IOException {
+    XContentBuilder builder = XContentFactory.jsonBuilder()
+      .startObject()
+      .startObject("type1").field("id", id);
+    
+    Map<String,List<String>> allValues = new HashMap<String,List<String>>();
+    
+    int pairCount = argPairs.length >> 1;
+    for (int i = 0; i < pairCount; i++)
+    {
+      String fieldName = argPairs[i*2];
+      String fieldValue = argPairs[i*2+1];
+      List<String> values = allValues.get(fieldName);
+      if (values == null)
+      {
+        values = new ArrayList<String>();
+        allValues.put(fieldName,values);
+      }
+      values.add(fieldValue);
+    }
+
+    for (String fieldName : allValues.keySet())
+    {
+      builder.field(fieldName, allValues.get(fieldName).toArray(new String[0]));
+    }
+    
+    builder.endObject()
+      .endObject();
+    return builder;
+  }
+    
   static class MockMCFAuthorityService {
     
     Server server;
