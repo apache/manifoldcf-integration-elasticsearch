@@ -93,7 +93,10 @@ public class MCFAuthorizerTest
     
     // Question: We need the equivalent of default field values.  How do we set that in ElasticSearch?
     // MHL
-    client.admin().indices().create(createIndexRequest("test")).actionGet();
+    client.admin().indices().create(
+      createIndexRequest("test")
+        .mapping("type1",aclsource())
+      ).actionGet();
     //             |     share    |   document
     //             |--------------|--------------
     //             | allow | deny | allow | deny
@@ -162,6 +165,31 @@ public class MCFAuthorizerTest
 
   protected Client getClient() {
     return client("server");
+  }
+  
+  private static XContentBuilder aclsource() throws IOException
+  {
+    XContentBuilder builder = XContentFactory.jsonBuilder()
+      .startObject()
+      .startObject("type1")
+      .startObject("properties");
+    addField(builder,"allow_token_document");
+    addField(builder,"allow_token_share");
+    addField(builder,"deny_token_document");
+    addField(builder,"deny_token_share");
+    builder.endObject()
+      .endObject()
+      .endObject();
+    return builder;
+  }
+  
+  private static void addField(XContentBuilder builder, String fieldName)
+    throws IOException
+  {
+    builder.startObject(fieldName)
+      .field("type","string")
+      .field("null_value","__nosecurity__")
+      .endObject();
   }
   
   private static XContentBuilder source(String id, String... argPairs) throws IOException {
