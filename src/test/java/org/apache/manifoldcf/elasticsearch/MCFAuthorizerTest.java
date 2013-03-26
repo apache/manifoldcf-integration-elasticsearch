@@ -28,6 +28,8 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.node.Node;
 
 import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.QueryBuilders;
 
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -94,8 +96,26 @@ public class MCFAuthorizerTest
     FilterBuilder user3Filter = mcfa.buildAuthorizationFilter("user3");
     FilterBuilder user4Filter = mcfa.buildAuthorizationFilter("user4");
     
-    // Need to figure out how to do a query where I can set the filter!
-    // MHL
+    // Sanity check to be sure I indexed everything right...
+    SearchResponse allResponse = client.prepareSearch("test").setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
+    verifyResponse(allResponse, "da12", "da13-dd3", "sa123-sd13", "sa3-sd1-da23", "notoken");
+    // Ok, check the filters I built.
+    SearchResponse user1Response = client.prepareSearch("test").setQuery(QueryBuilders.matchAllQuery()).setFilter(user1Filter).execute().actionGet();
+    verifyResponse(user1Response, "da12", "da13-dd3", "notoken");
+    SearchResponse user2Response = client.prepareSearch("test").setQuery(QueryBuilders.matchAllQuery()).setFilter(user2Filter).execute().actionGet();
+    verifyResponse(user2Response, "da12", "da13-dd3", "notoken");
+    SearchResponse user3Response = client.prepareSearch("test").setQuery(QueryBuilders.matchAllQuery()).setFilter(user3Filter).execute().actionGet();
+    verifyResponse(user3Response, "da12", "notoken");
+    SearchResponse user4Response = client.prepareSearch("test").setQuery(QueryBuilders.matchAllQuery()).setFilter(user4Filter).execute().actionGet();
+    verifyResponse(user4Response, "notoken");
+  }
+  
+  protected static void verifyResponse(SearchResponse userResponse, String... docIDs)
+    throws Exception
+  {
+    System.out.println("Total filtered hits: "+userResponse.getHits().totalHits());
+    assertThat(userResponse.getHits().totalHits(), equalTo((long)docIDs.length));
+    // MHL for full check
   }
   
   protected void createIndex()
@@ -126,25 +146,25 @@ public class MCFAuthorizerTest
     // notoken     |       |      |       |
     // ------------+-------+------+-------+------
     //
-    addDoc("id", "da12",
+    addDoc("da12",
       "allow_token_document", "token1",
       "allow_token_document", "token2");
-    addDoc("id", "da13-dd3",
+    addDoc("da13-dd3",
       "allow_token_document", "token1",
       "allow_token_document", "token3",
       "deny_token_document", "token3");
-    addDoc("id", "sa123-sd13",
+    addDoc("sa123-sd13",
       "allow_token_share", "token1",
       "allow_token_share", "token2",
       "allow_token_share", "token3",
       "deny_token_share", "token1",
       "deny_token_share", "token3");
-    addDoc("id", "sa3-sd1-da23",
+    addDoc("sa3-sd1-da23",
       "allow_token_document", "token2",
       "allow_token_document", "token3",
       "allow_token_share", "token3",
       "deny_token_share", "token1");
-    addDoc("id", "notoken");
+    addDoc("notoken");
     commit();
   }
 
@@ -156,13 +176,13 @@ public class MCFAuthorizerTest
     return "test";
   }
 
-  protected void addDoc(String id, String docID,
+  protected void addDoc(String docID,
     String... argPairs)
     throws IOException
   {
     client.prepareIndex().setIndex("test")
-      .setType("type1").setId(id)
-      .setSource(source(id,argPairs))
+      .setType("type1").setId(docID)
+      .setSource(source(docID,argPairs))
       .setRefresh(true).execute().actionGet();
   }
   
