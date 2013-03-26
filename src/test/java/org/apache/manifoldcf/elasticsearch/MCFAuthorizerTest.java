@@ -27,6 +27,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.node.Node;
 
+import org.elasticsearch.index.query.FilterBuilder;
 
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -83,6 +84,20 @@ public class MCFAuthorizerTest
     createIndex();
   }
 
+  @Test
+  public void simpleTest() throws Exception
+  {
+    ConfigurationParameters cp = new ConfigurationParameters();
+    MCFAuthorizer mcfa = new MCFAuthorizer(cp);
+    FilterBuilder user1Filter = mcfa.buildAuthorizationFilter("user1");
+    FilterBuilder user2Filter = mcfa.buildAuthorizationFilter("user2");
+    FilterBuilder user3Filter = mcfa.buildAuthorizationFilter("user3");
+    FilterBuilder user4Filter = mcfa.buildAuthorizationFilter("user4");
+    
+    // Need to figure out how to do a query where I can set the filter!
+    // MHL
+  }
+  
   protected void createIndex()
     throws IOException {
     try {
@@ -92,7 +107,6 @@ public class MCFAuthorizerTest
     }
     
     // Question: We need the equivalent of default field values.  How do we set that in ElasticSearch?
-    // MHL
     client.admin().indices().create(
       createIndexRequest("test")
         .mapping("type1",aclsource())
