@@ -99,6 +99,8 @@ public class MCFAuthorizerTest
     // Sanity check to be sure I indexed everything right...
     SearchResponse allResponse = client.prepareSearch("test").setQuery(QueryBuilders.matchAllQuery()).execute().actionGet();
     verifyResponse(allResponse, "da12", "da13-dd3", "sa123-sd13", "sa3-sd1-da23", "notoken");
+    SearchResponse partialResponse = client.prepareSearch("test").setQuery(QueryBuilders.termQuery("allow_token_share","token1")).execute().actionGet();
+    verifyResponse(partialResponse, "sa123-sd13");
     // Ok, check the filters I built.
     SearchResponse user1Response = client.prepareSearch("test").setQuery(QueryBuilders.matchAllQuery()).setFilter(user1Filter).execute().actionGet();
     verifyResponse(user1Response, "da12", "da13-dd3", "notoken");
