@@ -1,7 +1,9 @@
 Apache ManifoldCF Plugin for Elastic Search change Log
 $Id$
 
-======================= 0.1-dev =====================
+======================= 0.2-SNAPSHOT =====================
+
+======================= Release 0.1 =====================
 
 Initial commit.
 (Karl Wright)
