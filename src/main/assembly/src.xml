@@ -39,6 +39,7 @@
             <exclude>**/.*/**</exclude>
             <exclude>**/target/**</exclude>
             <exclude>**/lib/**</exclude>
+            <exclude>**/data/**</exclude>
           </excludes>
         </fileSet>
     </fileSets>
