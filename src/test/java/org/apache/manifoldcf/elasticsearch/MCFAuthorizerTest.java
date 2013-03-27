@@ -64,7 +64,9 @@ import static org.hamcrest.Matchers.nullValue;
 */
 public class MCFAuthorizerTest
 {
-
+  // Set this to true if null_value is ever fixed in ES
+  protected final static boolean useNullValue = false;
+  
   protected Client client;
   protected MockMCFAuthorityService service;
 
@@ -132,10 +134,21 @@ public class MCFAuthorizerTest
     }
     
     // Question: We need the equivalent of default field values.  How do we set that in ElasticSearch?
-    client.admin().indices().create(
-      createIndexRequest("test")
-        .mapping("type1",aclsource())
-      ).actionGet();
+    // Mappings with null_value are supposed to do that, but I can't get them to work.
+    if (useNullValue)
+    {
+      client.admin().indices().create(
+        createIndexRequest("test")
+          .mapping("type1",aclsource())
+        ).actionGet();
+    }
+    else
+    {
+      client.admin().indices().create(
+        createIndexRequest("test")
+        ).actionGet();
+    }
+    
     //             |     share    |   document
     //             |--------------|--------------
     //             | allow | deny | allow | deny
@@ -151,25 +164,67 @@ public class MCFAuthorizerTest
     // notoken     |       |      |       |
     // ------------+-------+------+-------+------
     //
-    addDoc("da12",
-      "allow_token_document", "token1",
-      "allow_token_document", "token2");
-    addDoc("da13-dd3",
-      "allow_token_document", "token1",
-      "allow_token_document", "token3",
-      "deny_token_document", "token3");
-    addDoc("sa123-sd13",
-      "allow_token_share", "token1",
-      "allow_token_share", "token2",
-      "allow_token_share", "token3",
-      "deny_token_share", "token1",
-      "deny_token_share", "token3");
-    addDoc("sa3-sd1-da23",
-      "allow_token_document", "token2",
-      "allow_token_document", "token3",
-      "allow_token_share", "token3",
-      "deny_token_share", "token1");
-    addDoc("notoken");
+    if (useNullValue)
+    {
+      addDoc("da12",
+        "allow_token_document", "token1",
+        "allow_token_document", "token2");
+      addDoc("da13-dd3",
+        "allow_token_document", "token1",
+        "allow_token_document", "token3",
+        "deny_token_document", "token3");
+      addDoc("sa123-sd13",
+        "allow_token_share", "token1",
+        "allow_token_share", "token2",
+        "allow_token_share", "token3",
+        "deny_token_share", "token1",
+        "deny_token_share", "token3");
+      addDoc("sa3-sd1-da23",
+        "allow_token_document", "token2",
+        "allow_token_document", "token3",
+        "allow_token_share", "token3",
+        "deny_token_share", "token1");
+      addDoc("notoken");
+    }
+    else
+    {
+      addDoc("da12",
+        "allow_token_document", "token1",
+        "allow_token_document", "token2",
+        "deny_token_document", "__nosecurity__",
+        "allow_token_share", "__nosecurity__",
+        "deny_token_share", "__nosecurity__"
+      );
+      addDoc("da13-dd3",
+        "allow_token_document", "token1",
+        "allow_token_document", "token3",
+        "deny_token_document", "token3",
+        "allow_token_share", "__nosecurity__",
+        "deny_token_share", "__nosecurity__"
+      );
+      addDoc("sa123-sd13",
+        "allow_token_share", "token1",
+        "allow_token_share", "token2",
+        "allow_token_share", "token3",
+        "deny_token_share", "token1",
+        "deny_token_share", "token3",
+        "allow_token_document", "__nosecurity__",
+        "deny_token_document", "__nosecurity__"
+      );
+      addDoc("sa3-sd1-da23",
+        "allow_token_document", "token2",
+        "allow_token_document", "token3",
+        "allow_token_share", "token3",
+        "deny_token_share", "token1",
+        "deny_token_document", "__nosecurity__"
+      );
+      addDoc("notoken",
+        "allow_token_document", "__nosecurity__",
+        "deny_token_document", "__nosecurity__",
+        "allow_token_share", "__nosecurity__",
+        "deny_token_share", "__nosecurity__"
+      );
+    }
     commit();
   }
 
