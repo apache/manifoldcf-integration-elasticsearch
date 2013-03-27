@@ -5,5 +5,8 @@ $Id$
 
 ======================= Release 0.1 =====================
 
+Added the path.data parameter in the ElasticSearch server: now the data folder is created under the target folder
+(Karl Wright, Piergiorgio Lucidi)
+
 Initial commit.
 (Karl Wright)
