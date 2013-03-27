@@ -56,6 +56,7 @@
           <directory></directory>
           <outputDirectory></outputDirectory>
           <includes>
+            <include>**/target/*.jar</include>
             <include>README.txt</include>
             <include>LICENSE.txt</include>
             <include>NOTICE.txt</include>
