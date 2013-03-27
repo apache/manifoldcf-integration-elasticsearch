@@ -18,46 +18,39 @@
 */
 package org.apache.manifoldcf.elasticsearch;
 
-import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.network.NetworkUtils;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.node.Node;
+import static org.elasticsearch.client.Requests.createIndexRequest;
+import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
+import static org.elasticsearch.common.settings.ImmutableSettings.Builder.EMPTY_SETTINGS;
+import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.index.query.QueryBuilders;
-
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-
-import static org.elasticsearch.client.Requests.*;
-import static org.elasticsearch.index.query.QueryBuilders.*;
-import static org.elasticsearch.common.settings.ImmutableSettings.Builder.EMPTY_SETTINGS;
-import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.nullValue;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.network.NetworkUtils;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.node.Node;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 
 /** This class tests the MCFAuthorizer class in an integration-test fashion.
@@ -70,6 +63,8 @@ public class MCFAuthorizerTest
   protected Client client;
   protected MockMCFAuthorityService service;
 
+  protected static final String ES_DATA_DIR = "target/data";
+  
   @BeforeClass
   public void startMCFAuthorityService() throws Exception {
     service = new MockMCFAuthorityService();
@@ -409,6 +404,7 @@ public class MCFAuthorizerTest
             .put(defaultSettings)
             .put(settings)
             .put("name", id)
+            .put("path.data", ES_DATA_DIR)
             .build();
 
     if (finalSettings.get("gateway.type") == null) {
@@ -424,6 +420,10 @@ public class MCFAuthorizerTest
           .settings(finalSettings)
           .build();
     nodes.put(id, node);
+    
+//    ImmutableSettings.Builder elasticsearchSettings = ImmutableSettings.settingsBuilder()
+//        .put("path.data", ES_DATA_DIR);
+    
     clients.put(id, node.client());
     return node;
   }
