@@ -116,21 +116,56 @@ public class MCFAuthorizer
   }
   
   /** Main method for building a filter representing appropriate security.
+  *@param domainMap is a map from MCF authorization domain name to user name,
+  * and describes a complete user identity.
+  *@return the filter builder.
+  */
+  public FilterBuilder buildAuthorizationFilter(Map<String,String> domainMap)
+    throws AuthorizerException
+  {
+    if (authorityBaseURL == null)
+      throw new IllegalStateException("Authority base URL required for finding access tokens for a user");
+    
+    if (domainMap == null || domainMap.size() == 0)
+      throw new IllegalArgumentException("Cannot find user tokens for null user");
+
+    StringBuilder sb = new StringBuilder("[");
+    boolean first = true;
+    for (String domain : domainMap.keySet())
+    {
+      if (!first)
+        sb.append(",");
+      else
+        first = false;
+      sb.append(domain).append(":").append(domainMap.get(domain));
+    }
+    sb.append("]");
+    LOG.info("Trying to match docs for user '"+sb.toString()+"'");
+
+    return buildAuthorizationFilter(getAccessTokens(domainMap));
+  }
+  
+  /** Main method for building a filter representing appropriate security.
   *@param authenticatedUserName is a user name in the form "user@domain".
   *@return the filter builder.
   */
   public FilterBuilder buildAuthorizationFilter(String authenticatedUserName)
     throws AuthorizerException
   {
-    if (authorityBaseURL == null)
-      throw new IllegalStateException("Authority base URL required for finding access tokens for a user");
-    
-    if (authenticatedUserName == null)
-      throw new IllegalArgumentException("Cannot find user tokens for null user");
-
-    LOG.info("Trying to match docs for user '"+authenticatedUserName+"'");
-
-    return buildAuthorizationFilter(getAccessTokens(authenticatedUserName));
+    return buildAuthorizationFilter(authenticatedUserName, "");
+  }
+  
+  /** Main method for building a filter representing appropriate security.
+  *@param authenticatedUserName is a user name in the form "user@domain".
+  *@param authenticatedUserDomain is the corresponding MCF authorization domain.
+  *@return the filter builder.
+  */
+  public FilterBuilder buildAuthorizationFilter(String authenticatedUserName, String authenticatedUserDomain)
+    throws AuthorizerException
+  {
+    Map<String,String> domainMap = new HashMap<String,String>();
+    domainMap.put(authenticatedUserDomain, authenticatedUserName);
+    return buildAuthorizationFilter(domainMap);
   }
 
   /** Main method for building a filter representing appropriate security.
@@ -193,12 +228,26 @@ public class MCFAuthorizer
   }
 
   /** Get access tokens given a username */
-  protected List<String> getAccessTokens(String authenticatedUserName)
+  protected List<String> getAccessTokens(Map<String,String> domainMap)
     throws AuthorizerException
   {
     try
     {
-      String theURL = authorityBaseURL + "/UserACLs?username="+URLEncoder.encode(authenticatedUserName,"utf-8");
+      StringBuilder urlBuffer = new StringBuilder(authorityBaseURL);
+      urlBuffer.append("/UserACLs");
+      int i = 0;
+      for (String domain : domainMap.keySet())
+      {
+        if (i == 0)
+          urlBuffer.append("?");
+        else
+          urlBuffer.append("&");
+        urlBuffer.append("username_").append(Integer.toString(i)).append("=").append(URLEncoder.encode(domainMap.get(domain),"utf-8")).append("&")
+          .append("domain_").append(Integer.toString(i)).append("=").append(URLEncoder.encode(domain,"utf-8"));
+        i++;
+      }
+      String theURL = urlBuffer.toString();
+
       HttpGet method = new HttpGet(theURL);
       try
       {
@@ -235,7 +284,7 @@ public class MCFAuthorizer
                 else
                 {
                   // It probably says something about the state of the authority(s) involved, so log it
-                  LOG.info("For user '"+authenticatedUserName+"', saw authority response "+line);
+                  LOG.info("Saw authority response "+line);
                 }
               }
               return tokenList;

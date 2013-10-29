@@ -3,6 +3,11 @@ $Id$
 
 ======================= 0.2-SNAPSHOT =====================
 
+Add functionality making the plugin compatible with multi-domain
+features of ManifoldCF.  Specifically, create method signatures that
+allow multiple domain/username pairs to be passed in.
+(Karl Wright)
+
 ======================= Release 0.1 =====================
 
 Added the path.data parameter in the ElasticSearch server: now the data folder is created under the target folder
