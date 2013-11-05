@@ -346,7 +346,7 @@ public class MCFAuthorizerTest
       @Override
       public void service(HttpServletRequest req, HttpServletResponse res)
           throws IOException {
-        String user = req.getParameter("username_0");
+        String user = req.getParameter("username");
         res.setStatus(HttpServletResponse.SC_OK);
         if(user.equals("user1") || user.equals("user2") || user.equals("user3"))
           res.getWriter().printf("TOKEN:token1\n");
