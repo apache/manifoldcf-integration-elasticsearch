@@ -16,17 +16,20 @@
 Compatibility
 ------------
 
-This version of this component is only compatible with ManifoldCF 1.5 and above, and cannot be used with earlier releases of ManifoldCF.
+This version of this component is only compatible with ManifoldCF 1.5 and above,
+and cannot be used with earlier releases of ManifoldCF.
 
 Instructions for Building Apache ManifoldCF Plugin for Elastic Search from Source
 -----------------------------------------------------------------------------
 
-1. Download the Java SE 6 JDK (Java Development Kit), or greater, from http://www.oracle.com/technetwork/java/index.html.
+1. Download the Java SE 6 JDK (Java Development Kit), or greater, from
+   http://www.oracle.com/technetwork/java/index.html.
    You will need the JDK installed, and the %JAVA_HOME%\bin directory included
    on your command path.  To test this, issue a "java -version" command from your
    shell and verify that the Java version is 1.6 or greater.
 
-2. Download and install Maven 2.2.1 or later.  Maven installation and configuration instructions can be found here:
+2. Download and install Maven 2.2.1 or later.  Maven installation and configuration
+   instructions can be found here:
 
 http://maven.apache.org/run-maven/index.html
 
