@@ -188,14 +188,18 @@ public class MCFAuthorizerTest
         "allow_token_document", "token2",
         "deny_token_document", "__nosecurity__",
         "allow_token_share", "__nosecurity__",
-        "deny_token_share", "__nosecurity__"
+        "deny_token_share", "__nosecurity__",
+        "allow_token_parent", "__nosecurity__",
+        "deny_token_parent", "__nosecurity__"
       );
       addDoc("da13-dd3",
         "allow_token_document", "token1",
         "allow_token_document", "token3",
         "deny_token_document", "token3",
         "allow_token_share", "__nosecurity__",
-        "deny_token_share", "__nosecurity__"
+        "deny_token_share", "__nosecurity__",
+        "allow_token_parent", "__nosecurity__",
+        "deny_token_parent", "__nosecurity__"
       );
       addDoc("sa123-sd13",
         "allow_token_share", "token1",
@@ -204,20 +208,26 @@ public class MCFAuthorizerTest
         "deny_token_share", "token1",
         "deny_token_share", "token3",
         "allow_token_document", "__nosecurity__",
-        "deny_token_document", "__nosecurity__"
+        "deny_token_document", "__nosecurity__",
+        "allow_token_parent", "__nosecurity__",
+        "deny_token_parent", "__nosecurity__"
       );
       addDoc("sa3-sd1-da23",
         "allow_token_document", "token2",
         "allow_token_document", "token3",
         "allow_token_share", "token3",
         "deny_token_share", "token1",
-        "deny_token_document", "__nosecurity__"
+        "deny_token_document", "__nosecurity__",
+        "allow_token_parent", "__nosecurity__",
+        "deny_token_parent", "__nosecurity__"
       );
       addDoc("notoken",
         "allow_token_document", "__nosecurity__",
         "deny_token_document", "__nosecurity__",
         "allow_token_share", "__nosecurity__",
-        "deny_token_share", "__nosecurity__"
+        "deny_token_share", "__nosecurity__",
+        "allow_token_parent", "__nosecurity__",
+        "deny_token_parent", "__nosecurity__"
       );
     }
     commit();
@@ -264,8 +274,10 @@ public class MCFAuthorizerTest
       .startObject("properties");
     addField(builder,"allow_token_document");
     addField(builder,"allow_token_share");
+    addField(builder,"allow_token_parent");
     addField(builder,"deny_token_document");
     addField(builder,"deny_token_share");
+    addField(builder,"deny_token_parent");
     builder.endObject()
       .endObject()
       .endObject();

@@ -62,6 +62,8 @@ public class MCFAuthorizer
   protected final String authorityBaseURL;
   protected final String fieldAllowDocument;
   protected final String fieldDenyDocument;
+  protected final String fieldAllowParent;
+  protected final String fieldDenyParent;
   protected final String fieldAllowShare;
   protected final String fieldDenyShare;
   protected final int connectionTimeout;
@@ -79,6 +81,8 @@ public class MCFAuthorizer
     fieldDenyDocument = cp.denyFieldPrefix+"document";
     fieldAllowShare = cp.allowFieldPrefix+"share";
     fieldDenyShare = cp.denyFieldPrefix+"share";
+    fieldAllowParent = cp.allowFieldPrefix+"parent";
+    fieldDenyParent = cp.denyFieldPrefix+"parent";
     connectionTimeout = cp.connectionTimeout;
     socketTimeout = cp.socketTimeout;
     poolSize = cp.connectionPoolSize;
@@ -179,6 +183,8 @@ public class MCFAuthorizer
     
     FilterBuilder allowShareOpen = new TermFilterBuilder(fieldAllowShare,NOSECURITY_TOKEN);
     FilterBuilder denyShareOpen = new TermFilterBuilder(fieldDenyShare,NOSECURITY_TOKEN);
+    FilterBuilder allowParentOpen = new TermFilterBuilder(fieldAllowParent,NOSECURITY_TOKEN);
+    FilterBuilder denyParentOpen = new TermFilterBuilder(fieldDenyParent,NOSECURITY_TOKEN);
     FilterBuilder allowDocumentOpen = new TermFilterBuilder(fieldAllowDocument,NOSECURITY_TOKEN);
     FilterBuilder denyDocumentOpen = new TermFilterBuilder(fieldDenyDocument,NOSECURITY_TOKEN);
     
@@ -191,6 +197,8 @@ public class MCFAuthorizer
       // have the SolrConnector inject a special token into these fields when they otherwise would be empty, and we can trivially match on that token.
       bq.must(allowShareOpen);
       bq.must(denyShareOpen);
+      bq.must(allowParentOpen);
+      bq.must(denyParentOpen);
       bq.must(allowDocumentOpen);
       bq.must(denyDocumentOpen);
     }
@@ -199,6 +207,7 @@ public class MCFAuthorizer
       // Extend the query appropriately for each user access token.
       bq.must(calculateCompleteSubquery(fieldAllowShare,fieldDenyShare,allowShareOpen,denyShareOpen,userAccessTokens));
       bq.must(calculateCompleteSubquery(fieldAllowDocument,fieldDenyDocument,allowDocumentOpen,denyDocumentOpen,userAccessTokens));
+      bq.must(calculateCompleteSubquery(fieldAllowParent,fieldDenyParent,allowParentOpen,denyParentOpen,userAccessTokens));
     }
 
     return bq;
