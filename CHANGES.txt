@@ -1,7 +1,9 @@
 Apache ManifoldCF Plugin for Elastic Search change Log
 $Id$
 
-======================= 1.2-SNAPSHOT =====================
+======================= 1.3-SNAPSHOT =====================
+
+======================= Release 1.2 =====================
 
 CONNECTORS-886: Add support for parent security.  This
 change requires reindexing of all content supported by this plugin.
