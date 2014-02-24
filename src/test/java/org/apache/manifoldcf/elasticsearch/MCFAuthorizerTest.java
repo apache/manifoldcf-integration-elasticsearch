@@ -57,7 +57,8 @@ import org.testng.annotations.Test;
 */
 public class MCFAuthorizerTest
 {
-  // Set this to true if null_value is ever fixed in ES
+  // Set this to true if we decide to us null_value in ES rather than explicit
+  // values sent by the connector.
   protected final static boolean useNullValue = false;
   
   protected Client client;
@@ -163,23 +164,45 @@ public class MCFAuthorizerTest
     {
       addDoc("da12",
         "allow_token_document", "token1",
-        "allow_token_document", "token2");
+        "allow_token_document", "token2",
+        "deny_token_document", null,
+        "allow_token_share", null,
+        "deny_token_share", null,
+        "allow_token_parent", null,
+        "deny_token_parent", null);
       addDoc("da13-dd3",
         "allow_token_document", "token1",
         "allow_token_document", "token3",
-        "deny_token_document", "token3");
+        "deny_token_document", "token3",
+        "allow_token_share", null,
+        "deny_token_share", null,
+        "allow_token_parent", null,
+        "deny_token_parent", null);
       addDoc("sa123-sd13",
         "allow_token_share", "token1",
         "allow_token_share", "token2",
         "allow_token_share", "token3",
         "deny_token_share", "token1",
-        "deny_token_share", "token3");
+        "deny_token_share", "token3",
+        "allow_token_document", null,
+        "deny_token_document", null,
+        "allow_token_parent", null,
+        "deny_token_parent", null);
       addDoc("sa3-sd1-da23",
         "allow_token_document", "token2",
         "allow_token_document", "token3",
         "allow_token_share", "token3",
-        "deny_token_share", "token1");
-      addDoc("notoken");
+        "deny_token_share", "token1",
+        "deny_token_document", null,
+        "allow_token_parent", null,
+        "deny_token_parent", null);
+      addDoc("notoken",
+        "allow_token_document", null,
+        "deny_token_document", null,
+        "allow_token_share", null,
+        "deny_token_share", null,
+        "allow_token_parent", null,
+        "deny_token_parent", null);
     }
     else
     {
