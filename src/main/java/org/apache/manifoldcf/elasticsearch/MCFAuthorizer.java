@@ -27,13 +27,9 @@ import org.elasticsearch.index.query.BoolFilterBuilder;
 import org.elasticsearch.index.query.TermFilterBuilder;
 
 import org.apache.http.client.HttpClient;
-import org.apache.http.HttpStatus;
-import org.apache.http.HttpException;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.HttpResponse;
 import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.util.EntityUtils;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -110,15 +106,15 @@ public class MCFAuthorizer
       httpClient = null;
     }
   }
-  
+
   /** Shut down the pool etc.
   */
   public void shutdown()
   {
-    if (authorityBaseURL != null)
+    if (connectionManager != null)
       connectionManager.shutdown();
   }
-  
+
   /** Main method for building a filter representing appropriate security.
   *@param domainMap is a map from MCF authorization domain name to user name,
   * and describes a complete user identity.
@@ -133,18 +129,20 @@ public class MCFAuthorizer
     if (domainMap == null || domainMap.size() == 0)
       throw new IllegalArgumentException("Cannot find user tokens for null user");
 
-    StringBuilder sb = new StringBuilder("[");
-    boolean first = true;
-    for (String domain : domainMap.keySet())
-    {
-      if (!first)
-        sb.append(",");
-      else
-        first = false;
-      sb.append(domain).append(":").append(domainMap.get(domain));
+    if(LOG.isInfoEnabled()){
+      StringBuilder sb = new StringBuilder("[");
+      boolean first = true;
+      for (String domain : domainMap.keySet())
+      {
+        if (!first)
+          sb.append(",");
+        else
+          first = false;
+        sb.append(domain).append(":").append(domainMap.get(domain));
+      }
+      sb.append("]");
+      LOG.info("Trying to match docs for user '"+sb.toString()+"'");
     }
-    sb.append("]");
-    LOG.info("Trying to match docs for user '"+sb.toString()+"'");
 
     return buildAuthorizationFilter(getAccessTokens(domainMap));
   }
