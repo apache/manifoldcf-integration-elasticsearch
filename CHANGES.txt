@@ -3,6 +3,9 @@ $Id$
 
 ======================= 2.1-SNAPSHOT =====================
 
+CONNECTORS-1194: Stale connection checks enabled.
+(Karl Wright)
+
 CONNECTORS-934 : Check if log level is enabled before constructing log message.
 (Ahmet Arslan)
 

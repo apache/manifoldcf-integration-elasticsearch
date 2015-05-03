@@ -93,7 +93,7 @@ public class MCFAuthorizer
       
       BasicHttpParams params = new BasicHttpParams();
       params.setBooleanParameter(CoreConnectionPNames.TCP_NODELAY,true);
-      params.setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK,false);
+      params.setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK,true);
       params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT,socketTimeout);
       params.setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT,connectionTimeout);
       DefaultHttpClient localClient = new DefaultHttpClient(connectionManager,params);
