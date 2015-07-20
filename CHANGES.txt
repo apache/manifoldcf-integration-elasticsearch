@@ -1,9 +1,6 @@
 Apache ManifoldCF Plugin for Elastic Search change Log
 $Id$
 
-======================= 2.1-SNAPSHOT =====================
-
-
 ======================= Release 2.1 =====================
 
 CONNECTORS-1194: Stale connection checks enabled.

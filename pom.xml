@@ -30,7 +30,7 @@
 
   <name>ManifoldCF ElasticSearch Plugin</name>
   <artifactId>elasticsearch-plugin-mcf</artifactId>
-  <version>2.2-SNAPSHOT</version>
+  <version>2.1</version>
   <packaging>jar</packaging>
   <description>ManifoldCF Plugin for ElasticSearch</description>
   <inceptionYear>2013</inceptionYear>
