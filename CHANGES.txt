@@ -3,6 +3,9 @@ $Id$
 
 ======================= 2.1-SNAPSHOT =====================
 
+
+======================= Release 2.1 =====================
+
 CONNECTORS-1194: Stale connection checks enabled.
 (Karl Wright)
 
